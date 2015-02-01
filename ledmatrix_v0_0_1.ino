@@ -36,7 +36,14 @@ byte blue[1024] = {0};
 uint8_t scansection = 0;
 
 void setup() {
-  // put your setup code here, to run once:
+  // just bogus setup to see brightness values
+  red[0] = 0b11111111;
+  red[1] = 0b11000000;
+  red[2] = 0b10010100;
+  red[3] = 0b01010101;
+  red[4] = 0b00010000;
+  red[5] = 0b00000100;
+  
   Serial.begin(115200);
   
   pinMode(A, OUTPUT);
@@ -86,53 +93,71 @@ void setup() {
   FD_SET (sockfd, &active_fd_set);
   
   Serial.println("socket set up");
+  
+  //writesection(0);
 }
 
 void loop() {
-  acceptclient();
+  //acceptclient();
   writesection(scansection);
-  scansection++;
-  if (scansection >= 16) {
-    scansection = 0;
-  }
-  //delay(10);
-  delayMicroseconds(500);
+  //scansection++;
+  //if (scansection >= 16) {
+  //  scansection = 0;
+  //}
+  //delay(4000);
+  //delayMicroseconds(500);
 }
     
 void writesection(uint8_t secn) {
   
-  digitalWrite(OE, HIGH);
   
-  for (uint8_t i=0; i<32; i++) {
-   digitalWrite(2, red[secn * 32 + i]);
-   digitalWrite(3, green[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
-   digitalWrite(4, blue[secn * 32 + i]);
-   digitalWrite(5, red[(secn + 16) * 32 + i]);
-   digitalWrite(6, green[(secn + 16) * 32 + i]);
-   digitalWrite(7, blue[(secn + 16) * 32 + i]);
-   
-   digitalWrite(CLK, LOW);
-   digitalWrite(CLK, HIGH);
-  } 
+  for (int j = 0; j<8; j++) { // loop eight times
+    int mask = 1 << j; // mask becomes 0x00000001, 0x00000010, ..., 0x10000000
+    Serial.println(mask);
+    
+    for(int k = 0; k < mask; k++) { // do the loop `mask` times, basically this causes mask of 0x10000000 to be on for much longer than 0x00000001
+      digitalWrite(OE, HIGH);
+      
+      for (uint8_t i=0; i<32; i++) {
+        if (k == 0) {
+          //Serial.print((red[secn * 32 + i] & mask) > 0);
+          if (mask == 128) {
+            Serial.println(red[secn * 32 + i]);
+          }
+        }
+        digitalWrite(2, red[secn * 32 + i] & mask);
+        digitalWrite(3, green[secn * 32 + i] & mask); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
+        digitalWrite(4, blue[secn * 32 + i] & mask);
+        digitalWrite(5, red[(secn + 16) * 32 + i] & mask);
+        digitalWrite(6, green[(secn + 16) * 32 + i] & mask);
+        digitalWrite(7, blue[(secn + 16) * 32 + i] & mask);
+        
+        digitalWrite(CLK, LOW);
+        digitalWrite(CLK, HIGH);
+      } 
+      
+      for (uint8_t i=0; i<32; i++) { // do it twice for two displays
+        digitalWrite(2, red[secn * 32 + i] & mask);
+        digitalWrite(3, green[secn * 32 + i] & mask); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
+        digitalWrite(4, blue[secn * 32 + i] & mask);
+        digitalWrite(5, red[(secn + 16) * 32 + i] & mask);
+        digitalWrite(6, green[(secn + 16) * 32 + i] & mask);
+        digitalWrite(7, blue[(secn + 16) * 32 + i] & mask);
+       
+        digitalWrite(CLK, LOW);
+        digitalWrite(CLK, HIGH);
+      }
   
-  for (uint8_t i=0; i<32; i++) { // do it twice for two displays
-   digitalWrite(2, red[secn * 32 + i]);
-   digitalWrite(3, green[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
-   digitalWrite(4, blue[secn * 32 + i]);
-   digitalWrite(5, red[(secn + 16) * 32 + i]);
-   digitalWrite(6, green[(secn + 16) * 32 + i]);
-   digitalWrite(7, blue[(secn + 16) * 32 + i]);
-   
-   digitalWrite(CLK, LOW);
-   digitalWrite(CLK, HIGH);
-  } 
+      digitalWrite(LAT, HIGH);
+      digitalWrite(LAT, LOW);
+      
+      
+      digitalWrite(OE, LOW);
+    }
+    Serial.println();
+  }
+    
 
-  digitalWrite(LAT, HIGH);
-  digitalWrite(LAT, LOW);
-  
-  
-  digitalWrite(OE, LOW);
-  
   digitalWrite(A, (secn & 0x1) ? HIGH : LOW);
   digitalWrite(B, (secn & 0x2) ? HIGH : LOW);
   digitalWrite(C, (secn & 0x4) ? HIGH : LOW);
