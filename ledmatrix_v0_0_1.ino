@@ -26,12 +26,13 @@ struct timeval to = {0,100}; // timeout after 0.1ms when waiting for client
 #define LAT 11
 
 
-byte red[1024] = {0};
+byte red1[1024] = {0};
+byte green1[1024] = {0};
+byte blue1[1024] = {0};
 
-byte green[1024] = {0};
-
-byte blue[1024] = {0};
-
+byte red2[1024] = {0};
+byte green2[1024] = {0};
+byte blue2[1024] = {0};
 
 uint8_t scansection = 0;
 
@@ -104,24 +105,24 @@ void writesection(uint8_t secn) {
   digitalWrite(OE, HIGH);
   
   for (uint8_t i=0; i<32; i++) {
-   digitalWrite(2, red[secn * 32 + i]);
-   digitalWrite(3, green[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
-   digitalWrite(4, blue[secn * 32 + i]);
-   digitalWrite(5, red[(secn + 16) * 32 + i]);
-   digitalWrite(6, green[(secn + 16) * 32 + i]);
-   digitalWrite(7, blue[(secn + 16) * 32 + i]);
+   digitalWrite(2, red1[secn * 32 + i]);
+   //digitalWrite(3, green1[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
+   //digitalWrite(4, blue1[secn * 32 + i]);
+   digitalWrite(5, red1[(secn + 16) * 32 + i]);
+   //digitalWrite(6, green1[(secn + 16) * 32 + i]);
+   //digitalWrite(7, blue1[(secn + 16) * 32 + i]);
    
    digitalWrite(CLK, LOW);
    digitalWrite(CLK, HIGH);
   } 
   
   for (uint8_t i=0; i<32; i++) { // do it twice for two displays
-   digitalWrite(2, red[secn * 32 + i]);
-   digitalWrite(3, green[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
-   digitalWrite(4, blue[secn * 32 + i]);
-   digitalWrite(5, red[(secn + 16) * 32 + i]);
-   digitalWrite(6, green[(secn + 16) * 32 + i]);
-   digitalWrite(7, blue[(secn + 16) * 32 + i]);
+   digitalWrite(2, red2[secn * 32 + i]);
+   //digitalWrite(3, green2[secn * 32 + i]); // in R0, write the value from red at the specified row (section * 32) and column (+ i)
+   //digitalWrite(4, blue2[secn * 32 + i]);
+   digitalWrite(5, red2[(secn + 16) * 32 + i]);
+   //digitalWrite(6, green2[(secn + 16) * 32 + i]);
+   //digitalWrite(7, blue2[(secn + 16) * 32 + i]);
    
    digitalWrite(CLK, LOW);
    digitalWrite(CLK, HIGH);
@@ -206,13 +207,28 @@ int read_from_client (int filedes) {
     {
       /* Data read. */
       Serial.println("Got a valid byte array");
-      memcpy(red, (void*)buffer, 1024);
-      memcpy(green, (void*)(buffer+1024), 1024);
-      memcpy(blue, (void*)(buffer+1024), 1024);
+      memcpy(red1, (void*)buffer, 1024);
+      memcpy(green1, (void*)(buffer+1024), 1024);
+      memcpy(blue1, (void*)(buffer+2048), 1024);
+      memcpy(red2, (void*)buffer, 1024);
+      memcpy(green2, (void*)(buffer+1024), 1024);
+      memcpy(blue2, (void*)(buffer+2048), 1024);
       Serial.println("Copied");
       return 0;
     }
-    else
+    else if (nbytes == 6144) {
+      
+      /* Data read. */
+      Serial.println("Got a valid byte array");
+      memcpy(red1, (void*)buffer, 1024);
+      memcpy(green1, (void*)(buffer+1024), 1024);
+      memcpy(blue1, (void*)(buffer+2048), 1024);
+      memcpy(red2, (void*)(buffer+3072), 1024);
+      memcpy(green2, (void*)(buffer+4096), 1024);
+      memcpy(blue2, (void*)(buffer+5120), 1024);
+      Serial.println("Copied");
+      return 0;
+    }
     {
       Serial.print("Message is wrong size: ");
       Serial.println(nbytes, DEC);
